@@ -27,16 +27,8 @@ from rich import box
 
 from vega import __version__
 from vega.config import Config, DEFAULT_CONFIG
-from vega.privacy import (
-    count_entries,
-    decrypt_file,
-    encrypt_file,
-    generate_key,
-    list_log_files,
-    log_audit,
-    read_recent,
-)
 from vega.privacy.audit import _ensure_audit_dir as _audit_dir
+from vega.privacy import log_audit, read_recent, list_log_files, count_entries, generate_key, encrypt_file, decrypt_file
 
 # ---------------------------------------------------------------------------
 # Rich console
@@ -789,6 +781,7 @@ def _migrate_obsidian(vault_path: Path, dry_run: bool) -> None:
 
     # Actual import via context_tree migration
     try:
+        from vega.context_tree.db import ContextTreeDB
         from vega.context_tree.migration import migrate_from_obsidian
     except ImportError:
         console.print("[yellow]Context tree migration module not yet available. Installing ...[/yellow]")
@@ -797,7 +790,9 @@ def _migrate_obsidian(vault_path: Path, dry_run: bool) -> None:
         return
 
     try:
-        report = migrate_from_obsidian(str(vault_path))
+        db = ContextTreeDB()
+        db.initialize()
+        report = migrate_from_obsidian(db, str(vault_path))
         console.print(f"[green]✓ Imported {report.nodes_created} nodes, {report.edges_created} edges[/green]")
         if report.errors:
             console.print(f"[yellow]{len(report.errors)} warnings/errors during import[/yellow]")

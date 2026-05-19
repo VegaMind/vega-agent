@@ -83,8 +83,8 @@ Options:
   -y, --yes         Skip all prompts (non-interactive mode)
 
 Environment variables:
-  NOUS_VERSION      Install a specific version (same as --version)
-  NOUS_HOME         Install to a custom directory (same as --path)
+  VEGA_VERSION      Install a specific version (same as --version)
+  VEGA_HOME         Install to a custom directory (same as --path)
 
 Examples:
   curl -fsSL https://getvega.sh | bash
@@ -97,8 +97,8 @@ EOF
 
 # ── Parse arguments ─────────────────────────────────────────────────────────
 INTERACTIVE=true
-INSTALL_VERSION="${NOUS_VERSION:-${DEFAULT_INSTALL_VERSION}}"
-VEGA_HOME="${NOUS_HOME:-${DEFAULT_VEGA_HOME}}"
+INSTALL_VERSION="${VEGA_VERSION:-${DEFAULT_INSTALL_VERSION}}"
+VEGA_HOME="${VEGA_HOME:-${DEFAULT_VEGA_HOME}}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -496,8 +496,7 @@ MINIMAL_EOF
   # Ensure core dependencies are installed
   info "Ensuring core dependencies..."
   "${PIP}" install --quiet \
-    chromadb \
-    "fabric-ai>=1.4" \
+    chromadb
     rich \
     click \
     httpx \

@@ -23,12 +23,28 @@ from vega.context_tree.node import (
 def _get_default_db_path() -> str:
     """Return the default path for the context tree database.
 
-    Uses ~/.vega/context_tree.db unless the VEGA_CONTEXT_DB
-    environment variable is set.
+    Checks in order:
+    1. VEGA_CONTEXT_DB env var
+    2. ~/.vega/config.yaml -> paths.context_tree_db
+    3. ~/.vega/context_tree.db
     """
     env_path = os.environ.get("VEGA_CONTEXT_DB")
     if env_path:
         return env_path
+
+    # Check config YAML for custom path
+    config_path = Path.home() / ".vega" / "config.yaml"
+    if config_path.exists():
+        import yaml
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+            custom_db = data.get("paths", {}).get("context_tree_db")
+            if custom_db:
+                return str(Path(custom_db).expanduser())
+        except Exception:
+            pass  # fall through to default
+
     vega_dir = Path.home() / ".vega"
     vega_dir.mkdir(parents=True, exist_ok=True)
     return str(vega_dir / "context_tree.db")
