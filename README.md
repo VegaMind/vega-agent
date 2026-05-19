@@ -34,7 +34,7 @@ curl -fsSL https://getvega.sh | bash -s -- --version v0.1.0 --path /opt/vega --y
 
 Vega is not a cloud service, not a chatbot website, and not another SaaS subscription. It is a local-first CLI agent with persistent memory, a structured knowledge graph (the Context Tree), transparent audit logging, and a clean, extensible architecture built on LangGraph workflows.
 
-Whether you use it as a daily assistant, a research notebook, a thinking tool, or an Obsidian-powered second brain, Vega keeps your data where it belongs — with you.
+Whether you use it as a daily assistant, a research companion, a thinking tool, or a knowledge base, Vega keeps your data where it belongs — with you.
 
 ---
 
