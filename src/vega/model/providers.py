@@ -140,3 +140,35 @@ def _parse_response(data: dict) -> dict:
         "total_tokens": usage_raw.get("total_tokens", 0),
     }
     return {"content": content, "model": model, "usage": usage}
+
+
+class OllamaProvider:
+    """Provider for local Ollama models."""
+
+    @classmethod
+    def supports_config(cls, config):
+        """Return True if *config* points at Ollama."""
+        return config.get("name") == "ollama"
+
+    @classmethod
+    def complete(cls, messages, config, api_key="", **kwargs):
+        """Send a chat completion request to a local Ollama instance.
+
+        Returns a dict with keys: ``content``, ``model``, ``provider``, ``usage``.
+        """
+        model = config.get("model", "")
+        temperature = kwargs.get("temperature", 0.7)
+        max_tokens = kwargs.get("max_tokens", 4096)
+        timeout = kwargs.get("timeout", 120.0)
+
+        from vega.model.ollama_helper import ollama_chat
+
+        result = ollama_chat(
+            model=model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            timeout=timeout,
+        )
+        result["provider"] = "ollama"
+        return result

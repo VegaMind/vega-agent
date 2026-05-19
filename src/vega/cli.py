@@ -100,34 +100,99 @@ def init(ctx: click.Context, auto: bool) -> None:
         cfg_data = _deep_copy(DEFAULT_CONFIG)
         api_key = ""
     else:
+        import questionary
+
         cfg_data = _deep_copy(DEFAULT_CONFIG)
         console.print(Panel.fit(
             "[bold]Vega Initialisation[/bold]\nConfigure your personal AI agent.",
             title="vega init",
         ))
 
-        # API key
-        console.print("\n[bold]API Key[/bold]  (leave blank to skip)")
-        api_key = click.prompt(
-            "  OpenRouter / provider API key",
-            default="",
-            hide_input=True,
-            show_default=False,
-        )
-
-        # Model provider
-        console.print("\n[bold]Model Provider[/bold]")
-        provider = click.prompt(
-            "  Provider",
-            default=cfg_data["model"]["provider"],
-        )
+        # Model provider (arrow-key selection)
+        provider = questionary.select(
+            "Select your LLM provider:",
+            choices=[
+                questionary.Choice(
+                    "OpenRouter — cloud API (recommended for beginners)", "openrouter",
+                ),
+                questionary.Choice(
+                    "OpenAI — direct API via OpenAI", "openai",
+                ),
+                questionary.Choice(
+                    "Ollama — local models, no API key needed", "ollama",
+                ),
+            ],
+            default="openrouter",
+            use_arrow_keys=True,
+        ).ask()
+        if not provider:
+            provider = "openrouter"
         cfg_data["model"]["provider"] = provider.strip()
 
-        model_name = click.prompt(
-            "  Model name",
-            default=cfg_data["model"]["name"],
-        )
-        cfg_data["model"]["name"] = model_name.strip()
+        # API key (skip for Ollama)
+        api_key = ""
+        if provider != "ollama":
+            console.print("\n[bold]API Key[/bold]")
+            api_key = click.prompt(
+                "  Provider API key",
+                default="",
+                hide_input=True,
+                show_default=False,
+            )
+
+        # Model name
+        if provider == "ollama":
+            # Ollama model selection flow
+            from vega.model.ollama_helper import (
+                check_ollama_installed,
+                check_ollama_running,
+                install_ollama,
+                list_local_models,
+                pick_model_interactive,
+                pull_model,
+                start_ollama,
+            )
+
+            # Check installation
+            if not check_ollama_installed():
+                console.print("\n[yellow]Ollama is not installed on this system.[/yellow]")
+                if questionary.confirm(
+                    "Install Ollama now? (requires curl + sudo)",
+                    default=True,
+                ).ask():
+                    install_ollama()
+                else:
+                    console.print("[dim]You can install it later: curl -fsSL https://ollama.com/install.sh | sh[/dim]")
+
+            # Check running
+            if not check_ollama_running():
+                console.print("[yellow]Ollama server is not running.[/yellow]")
+                if questionary.confirm("Start Ollama now?", default=True).ask():
+                    start_ollama()
+                    import time
+                    time.sleep(2)
+
+            # List local models and pick
+            local = list_local_models()
+            chosen = pick_model_interactive(local_models=local if local else None)
+
+            if chosen:
+                cfg_data["model"]["name"] = chosen
+                # If model not local, offer to pull
+                if not local or chosen not in local:
+                    if questionary.confirm(
+                        f"Pull {chosen} now? (requires internet)", default=True,
+                    ).ask():
+                        pull_model(chosen)
+            else:
+                cfg_data["model"]["name"] = "llama3.2b"
+        else:
+            # Cloud provider — free-text model name
+            model_name = click.prompt(
+                "  Model name",
+                default=cfg_data["model"]["name"],
+            )
+            cfg_data["model"]["name"] = model_name.strip()
 
         # Privacy toggles
         console.print("\n[bold]Privacy Settings[/bold]")

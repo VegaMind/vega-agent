@@ -10,12 +10,12 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from vega.model.providers import OpenAIProvider, OpenRouterProvider
+from vega.model.providers import OllamaProvider, OpenAIProvider, OpenRouterProvider
 
 logger = logging.getLogger(__name__)
 
 # Ordered list of supported provider classes
-PROVIDER_CLASSES = [OpenRouterProvider, OpenAIProvider]
+PROVIDER_CLASSES = [OpenRouterProvider, OpenAIProvider, OllamaProvider]
 
 
 class ModelRouterError(Exception):
