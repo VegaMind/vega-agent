@@ -180,18 +180,20 @@ The result is a knowledge base that grows with you, forgets what you don't need,
 
 ## Comparison
 
-| | Vega | Hermes Agent | OpenHuman | Kai |
-|---|---|---|---|---|
-| **Focus** | Personal AI agent, local-first | General-purpose AI agent | Privacy-preserving AI | Chatbot platform |
-| **Installation** | One-command installer | Python package | Docker / cloud | SaaS |
-| **Privacy model** | Scope enforcement + audit log | Configurable | Homomorphic encryption | Cloud-only |
-| **Memory** | ChromaDB vector store + Context Tree | Variable | Encrypted vector store | Session-only |
-| **Knowledge graph** | SQLite Context Tree with pruning | Optional | None | None |
-| **Audit trail** | Built-in JSONL logging | Configurable | Built-in | None |
-| **Obsidian import** | Built-in migration | None | None | None |
-| **Extensibility** | LangGraph workflows | Plugin system | Protocol-based | API-only |
-| **Model support** | OpenRouter, OpenAI, local | Multiple providers | Custom protocol | Proprietary |
-| **Local-only mode** | Yes (`local_models_only`) | Partial | Yes | No |
+| | Vega Agent | OpenClaw | Hermes Agent | OpenHuman | Kai |
+|---|---|---|---|---|---|
+| **Focus** | Personal AI agent, local-first | Multi-channel personal AI assistant | General-purpose AI agent framework | Privacy-preserving AI agent | Chatbot platform |
+| **Install** | `curl getvega.sh | bash` | `npm install -g openclaw` | Python package | Docker / cloud | SaaS |
+| **Language** | Python 3.11 | TypeScript / Node.js | Python | Python | Proprietary |
+| **Privacy** | Scope enforcement + JSONL audit log | Sandbox-based (Docker/SSH) | Configurable | 4-layer provable boundary | Cloud-only |
+| **Memory** | Context Tree (SQLite + ChromaDB) with auto-pruning | Flat memory (files + embeddings) | Variable | Encrypted vector store | Session-only |
+| **Channels** | CLI + shell | 20+ channels (WhatsApp, Telegram, Discord, Signal, iMessage, etc.) | CLI + Discord + TUI | Dashboard only | Web only |
+| **Knowledge** | Structured graph (root/branch/leaf) with typed edges | Skills + SOUL.md files | Optional | None | None |
+| **Audit** | Built-in JSONL | Security policies (no audit log) | Configurable | External via Guild.ai | None |
+| **Extensibility** | LangGraph workflows | Skills (ClawHub, 5,400+) | Plugin system | Protocol-based | API-only |
+| **Models** | OpenRouter, OpenAI, local (pluggable) | All major providers (Anthropic, OpenAI, Ollama, ~20 more) | Multiple providers | Custom protocol | Proprietary |
+| **Local-only** | Yes (`local_models_only`) | Yes (Docker sandbox) | Partial | Yes | No |
+| **Community** | New | **373K stars, 77K forks, 50K+ commits** | 156K stars | 0 stars | Single dev |
 
 Vega sits in a specific niche: a local-first personal AI agent that prioritises transparent privacy, persistent structured memory, and clean extensibility — without sacrificing ease of use.
 
