@@ -8,7 +8,6 @@ machine-parseable, and never automatically deleted.
 from __future__ import annotations
 
 import json
-import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path

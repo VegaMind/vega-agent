@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -12,7 +10,6 @@ from click.testing import CliRunner
 
 from vega import __version__
 from vega.cli import main
-
 
 # ═════════════════════════════════════════════════════════════════════════
 # Fixtures

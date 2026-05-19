@@ -14,7 +14,6 @@ from typing import Optional
 from vega.context_tree.db import ContextTreeDB
 from vega.context_tree.node import Edge, Node, NodeType, RelationshipType
 
-
 # ── Obsidian-specific helpers ──────────────────────────────────────────
 
 
@@ -279,7 +278,7 @@ def migrate_from_obsidian(
             tags=tags,
             source="obsidian",
         )
-        leaf_id = db.create_node(leaf)
+        _ = db.create_node(leaf)  # store, we don't need the ID here
         created_nodes += 1
 
         # Register in lookup map for wiki-link resolution

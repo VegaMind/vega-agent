@@ -29,9 +29,11 @@ from __future__ import annotations
 from vega.privacy.audit import (
     count_entries,
     list_log_files,
-    log as log_audit,
     read_all,
     read_recent,
+)
+from vega.privacy.audit import (
+    log as log_audit,
 )
 from vega.privacy.boundary import (
     ALL_SCOPES,

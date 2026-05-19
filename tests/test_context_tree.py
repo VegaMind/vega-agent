@@ -4,40 +4,37 @@ from __future__ import annotations
 
 import os
 import tempfile
-import json
-from pathlib import Path
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from vega.context_tree.node import (
-    Node,
-    NodeType,
-    Edge,
-    RelationshipType,
-    BranchSummaryStats,
-)
 from vega.context_tree.db import ContextTreeDB
-from vega.context_tree.pruning import (
-    get_archivable_nodes,
-    archive_nodes,
-    run_archive_pass,
-    reinforce_node,
-    condense_branch,
-    find_condensable_branches,
-    run_condensation_pass,
-    run_full_maintenance,
-    apply_importance_decay,
-)
 from vega.context_tree.migration import (
-    migrate_from_obsidian,
     MigrationReport,
-    parse_obsidian_frontmatter,
     extract_obsidian_links,
     extract_tags_from_content,
+    migrate_from_obsidian,
+    parse_obsidian_frontmatter,
     scan_vault,
 )
-
+from vega.context_tree.node import (
+    BranchSummaryStats,
+    Edge,
+    Node,
+    NodeType,
+    RelationshipType,
+)
+from vega.context_tree.pruning import (
+    apply_importance_decay,
+    archive_nodes,
+    condense_branch,
+    find_condensable_branches,
+    get_archivable_nodes,
+    reinforce_node,
+    run_archive_pass,
+    run_condensation_pass,
+    run_full_maintenance,
+)
 
 # ═════════════════════════════════════════════════════════════════════════
 # Fixtures

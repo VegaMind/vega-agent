@@ -113,8 +113,10 @@ class ContextTreeDB:
                 edge_id         TEXT PRIMARY KEY,
                 source_id       TEXT NOT NULL REFERENCES nodes(node_id) ON DELETE CASCADE,
                 target_id       TEXT NOT NULL REFERENCES nodes(node_id) ON DELETE CASCADE,
-                relationship    TEXT NOT NULL CHECK(relationship IN ('depends_on','references','contradicts','extends')),
-                strength        REAL NOT NULL DEFAULT 0.5 CHECK(strength >= 0.0 AND strength <= 1.0),
+                relationship    TEXT NOT NULL
+                    CHECK(relationship IN ('depends_on','references','contradicts','extends')),
+                strength        REAL NOT NULL DEFAULT 0.5
+                    CHECK(strength >= 0.0 AND strength <= 1.0),
                 created_at      TEXT NOT NULL
             );
 

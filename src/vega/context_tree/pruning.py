@@ -13,7 +13,6 @@ from typing import Callable, Optional
 from vega.context_tree.db import ContextTreeDB
 from vega.context_tree.node import Node, NodeType
 
-
 # ── Archiving ──────────────────────────────────────────────────────────
 
 
@@ -179,7 +178,7 @@ def condense_branch(
         return False
 
     leaves = db.find_children(branch_id)
-    leaves = [l for l in leaves if l.type == NodeType.LEAF]
+    leaves = [leaf for leaf in leaves if leaf.type == NodeType.LEAF]
 
     # Merge all leaf content
     all_text: list[str] = []

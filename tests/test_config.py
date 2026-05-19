@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import tempfile
 from pathlib import Path
 
@@ -10,12 +9,11 @@ import pytest
 import yaml
 
 from vega.config import (
-    Config,
     DEFAULT_CONFIG,
-    REQUIRED_TOP_LEVEL,
     REQUIRED_FIELDS,
+    REQUIRED_TOP_LEVEL,
+    Config,
 )
-
 
 # ═════════════════════════════════════════════════════════════════════════
 # Fixtures

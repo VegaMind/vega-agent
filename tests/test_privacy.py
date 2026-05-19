@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import json
-import os
-import tempfile
 from pathlib import Path
 
 import pytest
 
+from vega.gateway import (
+    GatewayResult,
+    route_llm_call,
+    route_tool_call,
+)
 from vega.privacy import (
     ALL_SCOPES,
     SCOPE_CONTEXT_FOR_LLM,
@@ -28,15 +31,7 @@ from vega.privacy import (
     read_all,
     read_recent,
 )
-from vega.privacy.audit import _ensure_audit_dir, _todays_log_path
-from vega.gateway import (
-    EXTERNAL_TARGETS,
-    LOCAL_TARGETS,
-    GatewayResult,
-    route_llm_call,
-    route_tool_call,
-)
-
+from vega.privacy.audit import _todays_log_path
 
 # ═════════════════════════════════════════════════════════════════════════
 # Fixtures
@@ -463,7 +458,6 @@ class TestIntegration:
 
     def test_multiple_days_logging(self, monkeypatch, tmp_path):
         """Simulate entries on different dates."""
-        import datetime
 
         fake_dir = tmp_path / ".vega" / "audit"
         fake_dir.mkdir(parents=True, exist_ok=True)

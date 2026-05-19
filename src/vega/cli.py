@@ -14,21 +14,28 @@ Commands:
 
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 from typing import Optional
 
 import click
+from rich import box
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from rich import box
 
 from vega import __version__
-from vega.config import Config, DEFAULT_CONFIG
+from vega.config import DEFAULT_CONFIG, Config
+from vega.privacy import (
+    count_entries,
+    decrypt_file,
+    encrypt_file,
+    generate_key,
+    list_log_files,
+    log_audit,
+    read_recent,
+)
 from vega.privacy.audit import _ensure_audit_dir as _audit_dir
-from vega.privacy import log_audit, read_recent, list_log_files, count_entries, generate_key, encrypt_file, decrypt_file
 
 # ---------------------------------------------------------------------------
 # Rich console
@@ -397,7 +404,7 @@ def shell(ctx: click.Context, model: Optional[str]) -> None:
                 resp = client.post(url, json=payload, headers=headers)
                 resp.raise_for_status()
                 reply = resp.json()["choices"][0]["message"]["content"]
-                console.print(f"\n[bold blue]Vega[/bold blue]")
+                console.print("\n[bold blue]Vega[/bold blue]")
                 console.print(reply)
                 messages.append({"role": "assistant", "content": reply})
         except Exception as exc:
@@ -645,7 +652,7 @@ def encrypt(
 
     if gen_key:
         k = generate_key()
-        console.print(f"[green]Generated new Fernet key:[/green]")
+        console.print("[green]Generated new Fernet key:[/green]")
         console.print(f"  [bold]{k.decode()}[/bold]")
         console.print("\nStore this key safely. Without it, encrypted data is unrecoverable.")
         return
