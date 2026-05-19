@@ -1,6 +1,11 @@
-"""Model routing — coming in v0.2.
+"""Model routing — multi-provider LLM routing with ordered fallback."""
 
-Vega will support multi-model routing via OpenRouter, local models,
-and custom providers. This module will handle provider selection,
-cost tracking, and fallback logic.
-"""
+from vega.model.providers import OpenAIProvider, OpenRouterProvider
+from vega.model.router import ModelRouter, ModelRouterError
+
+__all__ = [
+    "ModelRouter",
+    "ModelRouterError",
+    "OpenAIProvider",
+    "OpenRouterProvider",
+]

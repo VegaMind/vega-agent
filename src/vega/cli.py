@@ -15,6 +15,7 @@ Commands:
 from __future__ import annotations
 
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -233,16 +234,18 @@ def _deep_copy(d: dict) -> dict:
 def ask(ctx: click.Context, question: tuple[str, ...], model: Optional[str], provider: Optional[str]) -> None:
     """Ask the Vega agent a question.
 
-    Sends *QUESTION* to the configured LLM and prints the response.
+    Context-aware: searches the context tree and memory for relevant
+    information before calling the LLM, and stores the Q&A in episodic
+    memory afterwards.
     """
     full_question = " ".join(question)
     cfg: Optional[Config] = ctx.obj.get("config")
 
     model_name = model or (cfg.get("model", "name") if cfg else "deepseek/deepseek-v4-flash")
     provider_name = provider or (cfg.get("model", "provider") if cfg else "openrouter")
-    api_key = _read_api_key()
 
-    if not api_key:
+    # API key check
+    if not _read_api_key():
         console.print("[red]No API key found. Run [bold]vega init[/bold] first.[/red]")
         sys.exit(1)
 
@@ -260,37 +263,131 @@ def ask(ctx: click.Context, question: tuple[str, ...], model: Optional[str], pro
 
     console.print(f"[dim]Asking {model_name} ...[/dim]")
 
+    # ── Context-aware search ──────────────────────────────────────────────
+    context_entries: list[dict] = []
+    memory_enabled = cfg.get("features", "memory", True) if cfg else True
+    context_tree_enabled = cfg.get("features", "context_tree", True) if cfg else True
+
+    db = None
+    mem = None
+
+    if context_tree_enabled:
+        try:
+            from vega.context_tree.db import ContextTreeDB
+
+            db_path = cfg.context_tree_db_path if cfg else None
+            db = ContextTreeDB(db_path=str(db_path) if db_path else None)
+            db.initialize()
+        except Exception as exc:
+            console.print(f"[yellow]Warning: Could not initialise context tree: {exc}[/yellow]")
+            db = None
+
+    if memory_enabled:
+        try:
+            from vega.memory.vector import MemoryStore
+
+            chromadb_dir = cfg.chromadb_dir if cfg else None
+            mem = MemoryStore(persist_dir=str(chromadb_dir) if chromadb_dir else None)
+        except Exception as exc:
+            console.print(f"[yellow]Warning: Could not initialise memory: {exc}[/yellow]")
+            mem = None
+
+    # Semantic search across context tree (with ChromaDB fallback)
+    if db is not None:
+        try:
+            context_entries = db.semantic_search(full_question, limit=10, memory_store=mem)
+        except Exception as exc:
+            console.print(f"[yellow]Warning: Context search failed: {exc}[/yellow]")
+
+    # Also search episodic memory for similar past interactions
+    episodic_context: list[dict] = []
+    if mem is not None:
+        try:
+            episodic_context = mem.search(full_question, n_results=5, collection="vega_episodic")
+        except Exception as exc:
+            console.print(f"[dim]Episodic search unavailable: {exc}[/dim]")
+
+    # ── Build enriched prompt ─────────────────────────────────────────────
+    messages: list[dict] = []
+
+    if context_entries:
+        context_lines = []
+        for entry in context_entries[:5]:  # top 5 to stay within context window
+            snippet = entry.get("content", "")[:200] if entry.get("content") else ""
+            title = entry.get("title", "Untitled")
+            context_lines.append(f"- {title}: {snippet}")
+        context_block = "\n".join(context_lines)
+        messages.append(
+            {
+                "role": "system",
+                "content": f"Context from your knowledge base:\n{context_block}",
+            }
+        )
+
+    if episodic_context:
+        episodic_lines = []
+        for ep in episodic_context[:3]:
+            doc = ep.get("document") or ""
+            if doc:
+                episodic_lines.append(f"- {doc[:200]}")
+        if episodic_lines:
+            ep_block = "\n".join(episodic_lines)
+            if messages:
+                messages[0]["content"] += f"\n\nRelated past interactions:\n{ep_block}"
+            else:
+                messages.append(
+                    {
+                        "role": "system",
+                        "content": f"Related past interactions:\n{ep_block}",
+                    }
+                )
+
+    messages.append({"role": "user", "content": full_question})
+
+    # ── Call LLM ──────────────────────────────────────────────────────────
+    response_content = ""
     try:
-        import httpx
-        if provider_name == "openrouter":
-            url = "https://openrouter.ai/api/v1/chat/completions"
-            headers = {
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://vega-agent.local",
-            }
-        else:
-            url = "https://api.openai.com/v1/chat/completions"
-            headers = {
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
+        # Build router config — use overrides if provided, otherwise from config
+        router_cfg = cfg.data if cfg else {}
+        if model or provider:
+            router_cfg = {
+                "model": {
+                    "provider": provider_name,
+                    "name": model_name,
+                }
             }
 
-        payload = {
-            "model": model_name,
-            "messages": [{"role": "user", "content": full_question}],
-            "temperature": cfg.get("model", "temperature", 0.7) if cfg else 0.7,
-            "max_tokens": cfg.get("model", "max_tokens", 4096) if cfg else 4096,
-        }
+        from vega.model import ModelRouter, ModelRouterError
 
-        with httpx.Client(timeout=120) as client:
-            resp = client.post(url, json=payload, headers=headers)
-            resp.raise_for_status()
-            reply = resp.json()["choices"][0]["message"]["content"]
-            console.print(reply)
-    except Exception as exc:
+        router = ModelRouter(config=router_cfg)
+        result = router.complete(messages=messages)
+        response_content = result["content"]
+        console.print(response_content)
+    except ModelRouterError as exc:
         console.print(f"[red]Error: {exc}[/red]")
         sys.exit(1)
+    except Exception as exc:
+        console.print(f"[red]Unexpected error: {exc}[/red]")
+        sys.exit(1)
+
+    # ── Post-response: store in episodic memory and touch nodes ──────────
+    if response_content and mem is not None:
+        try:
+            mem.store(
+                text=f"Q: {full_question}\nA: {response_content}",
+                metadata={"source": "vega-ask", "timestamp": datetime.now(timezone.utc).isoformat()},
+                collection="vega_episodic",
+            )
+        except Exception as exc:
+            console.print(f"[dim]Could not store to episodic memory: {exc}[/dim]")
+
+    if response_content and db is not None:
+        for entry in context_entries:
+            if entry.get("source") == "context_tree" and entry.get("node_id"):
+                try:
+                    db.touch_node(entry["node_id"])
+                except Exception:
+                    pass
 
 
 # ═════════════════════════════════════════════════════════════════════════
@@ -308,28 +405,13 @@ def shell(ctx: click.Context, model: Optional[str]) -> None:
     """
     cfg: Optional[Config] = ctx.obj.get("config")
     model_name = model or (cfg.get("model", "name") if cfg else "deepseek/deepseek-v4-flash")
-    provider_name = cfg.get("model", "provider") if cfg else "openrouter"
-    api_key = _read_api_key()
 
-    if not api_key:
+    # Check API key exists
+    if not _read_api_key():
         console.print("[red]No API key found. Run [bold]vega init[/bold] first.[/red]")
         sys.exit(1)
 
-    import httpx
-
-    if provider_name == "openrouter":
-        url = "https://openrouter.ai/api/v1/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://vega-agent.local",
-        }
-    else:
-        url = "https://api.openai.com/v1/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        }
+    from vega.model import ModelRouter, ModelRouterError
 
     messages: list[dict] = [
         {
@@ -379,36 +461,37 @@ def shell(ctx: click.Context, model: Optional[str]) -> None:
         if not user_input.strip():
             continue
 
-        # Log to audit
+        # Route through gateway for audit + scope enforcement
         try:
-            log_audit(
-                action="shell_message",
-                target=provider_name,
-                model_used=model_name,
-                data_summary=user_input.strip()[:80],
+            from vega.gateway import route_llm_call
+
+            gw_result = route_llm_call(
+                prompt=user_input,
+                target="openrouter-chat",
+                model=model_name,
                 why="User message in interactive shell",
             )
+            if not gw_result.ok:
+                console.print(f"[red]Blocked by privacy gateway: {gw_result.reason}[/red]")
+                continue
         except Exception:
-            pass
+            pass  # gateway audit is best-effort
 
         messages.append({"role": "user", "content": user_input})
 
         try:
-            payload = {
-                "model": model_name,
-                "messages": messages,
-                "temperature": cfg.get("model", "temperature", 0.7) if cfg else 0.7,
-                "max_tokens": cfg.get("model", "max_tokens", 4096) if cfg else 4096,
-            }
-            with httpx.Client(timeout=120) as client:
-                resp = client.post(url, json=payload, headers=headers)
-                resp.raise_for_status()
-                reply = resp.json()["choices"][0]["message"]["content"]
-                console.print("\n[bold blue]Vega[/bold blue]")
-                console.print(reply)
-                messages.append({"role": "assistant", "content": reply})
-        except Exception as exc:
+            router = ModelRouter(config=cfg.data if cfg else {})
+            result = router.complete(
+                messages=messages,
+            )
+            reply = result["content"]
+            console.print("\n[bold blue]Vega[/bold blue]")
+            console.print(reply)
+            messages.append({"role": "assistant", "content": reply})
+        except ModelRouterError as exc:
             console.print(f"[red]Error: {exc}[/red]")
+        except Exception as exc:
+            console.print(f"[red]Unexpected error: {exc}[/red]")
 
 
 def _print_shell_help() -> None:
