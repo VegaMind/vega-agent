@@ -10,7 +10,7 @@ import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from vega.context_tree.node import (
     Edge,
@@ -586,7 +586,7 @@ class ContextTreeDB:
         self,
         query: str,
         limit: int = 10,
-        memory_store: Optional = None,
+        memory_store: Optional[Any] = None,
     ) -> list[dict]:
         """Search across ChromaDB MemoryStore and SQLite context tree.
 

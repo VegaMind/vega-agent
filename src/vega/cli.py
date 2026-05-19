@@ -27,6 +27,7 @@ from rich.table import Table
 
 from vega import __version__
 from vega.config import DEFAULT_CONFIG, Config
+from vega.model import ModelRouter, ModelRouterError
 from vega.privacy import (
     count_entries,
     decrypt_file,
@@ -249,17 +250,21 @@ def ask(ctx: click.Context, question: tuple[str, ...], model: Optional[str], pro
         console.print("[red]No API key found. Run [bold]vega init[/bold] first.[/red]")
         sys.exit(1)
 
-    # Log the ask to audit
+    # Route through gateway for audit + scope enforcement
     try:
-        log_audit(
-            action="ask",
-            target=provider_name,
-            model_used=model_name,
-            data_summary=full_question[:80],
+        from vega.gateway import route_llm_call
+
+        gw_result = route_llm_call(
+            prompt=full_question,
+            target=f"{provider_name}-chat",
+            model=model_name,
             why="User asked a question via CLI",
         )
+        if not gw_result.ok:
+            console.print(f"[red]Blocked by privacy gateway: {gw_result.reason}[/red]")
+            sys.exit(1)
     except Exception:
-        pass  # audit is best-effort
+        pass  # gateway audit is best-effort
 
     console.print(f"[dim]Asking {model_name} ...[/dim]")
 
@@ -354,10 +359,10 @@ def ask(ctx: click.Context, question: tuple[str, ...], model: Optional[str], pro
                 "model": {
                     "provider": provider_name,
                     "name": model_name,
+                    "temperature": cfg.get("model", "temperature", 0.7) if cfg else 0.7,
+                    "max_tokens": cfg.get("model", "max_tokens", 4096) if cfg else 4096,
                 }
             }
-
-        from vega.model import ModelRouter, ModelRouterError
 
         router = ModelRouter(config=router_cfg)
         result = router.complete(messages=messages)
@@ -405,13 +410,12 @@ def shell(ctx: click.Context, model: Optional[str]) -> None:
     """
     cfg: Optional[Config] = ctx.obj.get("config")
     model_name = model or (cfg.get("model", "name") if cfg else "deepseek/deepseek-v4-flash")
+    provider_name = cfg.get("model", "provider") if cfg else "openrouter"
 
     # Check API key exists
     if not _read_api_key():
         console.print("[red]No API key found. Run [bold]vega init[/bold] first.[/red]")
         sys.exit(1)
-
-    from vega.model import ModelRouter, ModelRouterError
 
     messages: list[dict] = [
         {
@@ -431,6 +435,8 @@ def shell(ctx: click.Context, model: Optional[str]) -> None:
         title=f"vega shell ({model_name})",
         border_style="green",
     ))
+
+    from vega.gateway import route_llm_call
 
     while True:
         try:
@@ -463,11 +469,9 @@ def shell(ctx: click.Context, model: Optional[str]) -> None:
 
         # Route through gateway for audit + scope enforcement
         try:
-            from vega.gateway import route_llm_call
-
             gw_result = route_llm_call(
                 prompt=user_input,
-                target="openrouter-chat",
+                target=f"{provider_name}-chat",
                 model=model_name,
                 why="User message in interactive shell",
             )

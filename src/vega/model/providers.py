@@ -38,6 +38,10 @@ class OpenRouterProvider:
 
         Returns a dict with keys: ``content``, ``model``, ``provider``, ``usage``.
         """
+        if not api_key:
+            raise ValueError(
+                "OpenRouter requires an API key — run `vega init` or set one in ~/.vega/.api_key"
+            )
         model = config.get("model", "")
         temperature = kwargs.get("temperature", 0.7)
         max_tokens = kwargs.get("max_tokens", 4096)
@@ -90,6 +94,10 @@ class OpenAIProvider:
 
         Returns a dict with keys: ``content``, ``model``, ``provider``, ``usage``.
         """
+        if not api_key:
+            raise ValueError(
+                "OpenAI requires an API key — run `vega init` or set one in ~/.vega/.api_key"
+            )
         model = config.get("model", "")
         temperature = kwargs.get("temperature", 0.7)
         max_tokens = kwargs.get("max_tokens", 4096)
@@ -116,7 +124,7 @@ class OpenAIProvider:
         result = _parse_response(data)
         result["provider"] = "openai"
         logger.debug(
-            "OpenAI response: model=%s, usage=%s", result["model"], result["model"], result["usage"]
+            "OpenAI response: model=%s, usage=%s", result["model"], result["usage"]
         )
         return result
 
