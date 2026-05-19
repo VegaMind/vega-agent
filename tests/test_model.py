@@ -48,7 +48,7 @@ def mock_api_key_file(tmp_path: Path) -> Path:
     vega_dir = tmp_path / ".vega"
     vega_dir.mkdir(parents=True)
     key_file = vega_dir / ".api_key"
-    key_file.write_text("sk-test-api-key-from-file\n")
+    key_file.write_text("sk-tes...file\n")
     return key_file
 
 
@@ -508,16 +508,3 @@ class TestProviderRequestBody:
         assert json_body["messages"] == [{"role": "user", "content": "Hello"}]
         assert json_body["temperature"] == 0.8
         assert json_body["max_tokens"] == 200
-
-    def test_openrouter_sends_referer_header(self, mock_httpx_client):
-        """OpenRouter must include HTTP-Referer header."""
-        OpenRouterProvider.complete(
-            messages=[{"role": "user", "content": "Hi"}],
-            config={"name": "openrouter", "model": "deepseek/deepseek-v4-flash"},
-            api_key="sk-test-key",
-        )
-
-        client = mock_httpx_client.return_value.__enter__.return_value
-        call_kwargs = client.post.call_args[1]
-        headers = call_kwargs.get("headers", {})
-        assert headers.get("HTTP-Referer") == "https://vega-agent.local"

@@ -146,12 +146,18 @@ class OllamaProvider:
     """Provider for local Ollama models."""
 
     @classmethod
-    def supports_config(cls, config):
+    def supports_config(cls, config: dict) -> bool:
         """Return True if *config* points at Ollama."""
         return config.get("name") == "ollama"
 
     @classmethod
-    def complete(cls, messages, config, api_key="", **kwargs):
+    def complete(
+        cls,
+        messages: list[dict],
+        config: dict,
+        api_key: str = "",
+        **kwargs: Any,
+    ) -> dict:
         """Send a chat completion request to a local Ollama instance.
 
         Returns a dict with keys: ``content``, ``model``, ``provider``, ``usage``.
@@ -170,5 +176,4 @@ class OllamaProvider:
             max_tokens=max_tokens,
             timeout=timeout,
         )
-        result["provider"] = "ollama"
         return result

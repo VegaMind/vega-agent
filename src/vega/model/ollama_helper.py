@@ -19,7 +19,7 @@ CURATED_MODELS = {
         ("llama3.1:8b", "Meta Llama 3.1 8B", "Most popular, battle-tested"),
         ("qwen3.5:9b", "Qwen 3.5 9B", "Excellent coder for its size"),
         ("mistral:7b", "Mistral 7B", "Fast classic, great latency"),
-        ("mistral-3:8b", "Mistral Ministral 8B", "Efficient 8B, fast inference"),
+        ("ministral-3:8b", "Mistral Ministral 8B", "Efficient 8B, fast inference"),
         ("deepseek-r1:7b", "DeepSeek R1 7B", "Reasoning specialist"),
     ],
     "Larger (under 16B)": [
@@ -29,14 +29,6 @@ CURATED_MODELS = {
         ("deepseek-r1:14b", "DeepSeek R1 14B", "Reasoning power"),
     ],
 }
-
-
-def get_models_flat():
-    result = []
-    for cat, ms in CURATED_MODELS.items():
-        for tag, name, desc in ms:
-            result.append({"tag": tag, "display": f"{name} ({desc})", "category": cat})
-    return result
 
 
 def check_ollama_installed():
@@ -95,13 +87,17 @@ def pull_model(name):
 def install_ollama():
     print("Installing Ollama...")
     try:
-        r = subprocess.run(
+        p = subprocess.Popen(
             ["sh", "-c", "curl -fsSL https://ollama.com/install.sh | sh"],
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
-            timeout=120,
         )
-        if r.returncode == 0:
+        for line in p.stdout:
+            print(line, end="")
+            sys.stdout.flush()
+        p.wait(timeout=120)
+        if p.returncode == 0:
             print("Ollama installed successfully")
             return True
         print("Ollama installation failed.")
@@ -151,6 +147,7 @@ def pick_model_interactive(local_models=None):
         "Select a model (arrow keys, Enter to confirm):",
         choices=choices,
         use_arrow_keys=True,
+        use_jk_keys=True,
     ).ask()
     if result == "__custom__":
         c = questionary.text("Enter model name (e.g. qwen3-coder:30b):").ask()

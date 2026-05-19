@@ -170,7 +170,11 @@ def init(ctx: click.Context, auto: bool) -> None:
                 if questionary.confirm("Start Ollama now?", default=True).ask():
                     start_ollama()
                     import time
-                    time.sleep(2)
+                    # Poll until running (10 seconds max)
+                    for _ in range(10):
+                        time.sleep(1)
+                        if check_ollama_running():
+                            break
 
             # List local models and pick
             local = list_local_models()
@@ -185,7 +189,7 @@ def init(ctx: click.Context, auto: bool) -> None:
                     ).ask():
                         pull_model(chosen)
             else:
-                cfg_data["model"]["name"] = "llama3.2b"
+                cfg_data["model"]["name"] = "llama3.2:3b"
         else:
             # Cloud provider — free-text model name
             model_name = click.prompt(
@@ -227,7 +231,7 @@ def init(ctx: click.Context, auto: bool) -> None:
         console.print("[green]✓ API key saved to ~/.vega/.api_key (mode 600)[/green]")
 
     # ── Test setup ──────────────────────────────────────────────────────
-    if not auto:
+    if not auto and cfg_data["model"]["provider"] != "ollama":
         if click.confirm("\nTest the setup with a quick API call?", default=True):
             _test_setup(api_key or _read_api_key(), cfg_data["model"])
 
