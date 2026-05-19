@@ -1,13 +1,13 @@
-# Vega — Your Personal AI. Installed. Private.
+# Vega — A personal AI agent with cross-session memory and privacy built in
 
 Your personal AI agent that lives on your machine. Private by default, extensible by design, and ready in one command.
 
 [![GitHub Stars](https://img.shields.io/github/stars/VegaMind/vega-agent?style=flat-square&logo=github)](https://github.com/VegaMind/vega-agent)
-[![PyPI Version](https://img.shields.io/pypi/v/vega-agent?style=flat-square&logo=pypi)](https://pypi.org/project/vega-agent/)
+[![Release](https://img.shields.io/github/v/release/VegaMind/vega-agent?style=flat-square&logo=github)](https://github.com/VegaMind/vega-agent/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
-[![CI](https://img.shields.io/github/actions/workflow/status/VegaMind/vega-agent/ci.yml?style=flat-square&logo=github-actions)](https://github.com/VegaMind/vega-agent/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/VegaMind/vega-agent/ci.yml?style=flat-square&logo=github-actions&label=tests)](https://github.com/VegaMind/vega-agent/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue?style=flat-square&logo=python)](https://python.org)
-[![Docs](https://img.shields.io/badge/docs-vega--agent.dev-blue?style=flat-square&logo=readthedocs)](https://vega-agent.dev/docs)
+[![Docs](https://img.shields.io/badge/docs-github.io-blue?style=flat-square&logo=readthedocs)](https://VegaMind.github.io/vega-agent)
 [![Discord](https://img.shields.io/badge/discord-join-5865F2?style=flat-square&logo=discord)](https://discord.gg/vega-agent)
 
 ---
