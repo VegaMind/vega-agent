@@ -8,7 +8,7 @@
 set -euo pipefail
 
 # ── Constants ───────────────────────────────────────────────────────────────
-REPO_OWNER="vega-agent"
+REPO_OWNER="VegaMind"
 REPO_NAME="vega"
 DEFAULT_INSTALL_VERSION="latest"
 DEFAULT_VEGA_HOME="${HOME}/.vega"
@@ -634,7 +634,7 @@ CONFIG_EOF
   echo -e "  ${C_DIM}Config file:      ${VEGA_HOME}/config.yaml${C_RESET}"
   echo ""
   echo -e "  ${C_YELLOW}  💡  Set your API key first:  ${C_BOLD}vega init${C_RESET}"
-  echo -e "  ${C_YELLOW}  📖  Documentation:           https://vega-agent.github.io/vega${C_RESET}"
+  echo -e "  ${C_YELLOW}  📖  Documentation:           https://VegaMind.github.io/vega-agent${C_RESET}"
   echo -e "  ${C_YELLOW}  🐛  Report issues:           https://github.com/${REPO_OWNER}/${REPO_NAME}/issues${C_RESET}"
   echo ""
   echo -e "  ${C_BG_CYAN}${C_BOLD_BLACK}═══════════════════════════════════════════════════════════════${C_RESET}"

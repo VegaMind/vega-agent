@@ -48,10 +48,10 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/vega-agent/vega"
-Repository = "https://github.com/vega-agent/vega"
-Documentation = "https://vega-agent.github.io/vega"
-Issues = "https://github.com/vega-agent/vega/issues"
+Homepage = "https://github.com/VegaMind/vega-agent"
+Repository = "https://github.com/VegaMind/vega-agent"
+Documentation = "https://VegaMind.github.io/vega-agent"
+Issues = "https://github.com/VegaMind/vega-agent/issues"
 
 [project.scripts]
 vega = "vega.cli:main"

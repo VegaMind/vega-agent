@@ -1,7 +1,7 @@
 site_name: Vega
-site_url: https://vega-agent.github.io/vega
-repo_url: https://github.com/vega-agent/vega
-repo_name: vega-agent/vega
+site_url: https://VegaMind.github.io/vega-agent
+repo_url: https://github.com/VegaMind/vega-agent
+repo_name: VegaMind/vega-agent
 edit_uri: edit/main/docs/
 
 theme:

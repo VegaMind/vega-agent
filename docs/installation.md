@@ -38,7 +38,7 @@ vega init
 ## From source
 
 ```bash
-git clone https://github.com/vega-agent/vega
+git clone https://github.com/VegaMind/vega-agent
 cd vega
 python3 -m venv .venv
 source .venv/bin/activate

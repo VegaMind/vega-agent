@@ -4,7 +4,7 @@
 
 If you discover a security vulnerability in Vega, please report it privately.
 
-**Do not open a public issue.** Instead, email **megatron.j41@gmail.com** or open a [GitHub Security Advisory](https://github.com/vega-agent/vega/security/advisories/new).
+**Do not open a public issue.** Instead, email **megatron.j41@gmail.com** or open a [GitHub Security Advisory](https://github.com/VegaMind/vega-agent/security/advisories/new).
 
 We will:
 1. Acknowledge receipt within 48 hours
