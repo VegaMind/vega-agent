@@ -10,7 +10,7 @@ import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from vega.context_tree.node import (
     Edge,
@@ -579,6 +579,92 @@ class ContextTreeDB:
             ids.append(node.node_id)
         conn.commit()
         return ids
+
+    # ── Semantic search (hybrid: ChromaDB + SQLite LIKE) ───────────────
+
+    def semantic_search(
+        self,
+        query: str,
+        limit: int = 10,
+        memory_store: Optional[Any] = None,
+    ) -> list[dict]:
+        """Search across ChromaDB MemoryStore and SQLite context tree.
+
+        Queries both the ChromaDB ``vega_memories`` collection (semantic)
+        and the SQLite ``nodes`` table (LIKE on title+content), merges the
+        results, and returns deduplicated entries sorted by relevance.
+
+        Args:
+            query: Natural-language search string.
+            limit: Maximum number of results (default 10).
+            memory_store: An optional ``MemoryStore`` instance.  If not
+                provided, one is created internally using the default
+                persist directory (``~/.vega/chromadb/``).
+
+        Returns:
+            A list of dicts, each with keys ``source`` (``'context_tree'``
+            or ``'memory'``), ``node_id``, ``title``, ``content``, and
+            ``relevance`` (float, higher = more relevant).
+        """
+        results: list[dict] = []
+        sqlite_lookup: dict[str, dict] = {}
+
+        # 1. Search SQLite via LIKE
+        sqlite_nodes = self.search_nodes(query, limit=limit)
+        for node in sqlite_nodes:
+            entry = {
+                "source": "context_tree",
+                "node_id": node.node_id,
+                "title": node.title,
+                "content": node.content,
+                "relevance": node.importance,
+            }
+            results.append(entry)
+            sqlite_lookup[node.node_id] = entry
+
+        # 2. Search ChromaDB MemoryStore (graceful degradation on failure)
+        chroma_results: list[dict] = []
+        try:
+            if memory_store is None:
+                from vega.memory.vector import MemoryStore
+
+                memory_store = MemoryStore()
+            chroma_results = memory_store.search(
+                query,
+                n_results=limit,
+                collection="vega_memories",
+            )
+        except Exception:
+            # ChromaDB unavailable — fall back to SQLite-only results
+            pass
+
+        # 3. Merge ChromaDB results with SQLite results
+        for cr in chroma_results:
+            doc_text = cr.get("document") or ""
+            meta = cr.get("metadata") or {}
+            distance = cr.get("distance") or 0.0
+            relevance = 1.0 - distance if distance is not None else 0.5
+
+            node_id = meta.get("node_id")
+
+            if node_id and node_id in sqlite_lookup:
+                # Merge: prefer ChromaDB relevance score
+                sqlite_lookup[node_id]["relevance"] = relevance
+            else:
+                # No matching SQLite node — return as memory entry
+                results.append(
+                    {
+                        "source": "memory",
+                        "node_id": node_id or cr.get("id", ""),
+                        "title": meta.get("title", ""),
+                        "content": doc_text,
+                        "relevance": relevance,
+                    }
+                )
+
+        # 4. Sort by relevance descending, trim to limit
+        results.sort(key=lambda x: x["relevance"], reverse=True)
+        return results[:limit]
 
     # ── Internal helpers ───────────────────────────────────────────────
 
